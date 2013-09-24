@@ -1,27 +1,32 @@
+# refactor, use the [](coord)
+# losing
+# unflagging
+# customize for larger board
+# save funtionality
 require 'debugger'
 
 class Game
 
   attr_reader :this_board
 
+  def initialize(size)
+    @this_board = Board.new(size)
+    @user = User.new
+    p "If you want to reveal a coordinate type '0,0', if you want to flag a coordinate type '0,0f'"
+  end
+
   def won?
     # if all the bombs are flagged and all the others are revealed, true
     could_win = true
-    @this_board.each do |row|
-      @this_board.each do |column|
-        unless ((@this_board[row][column].content == "B" && @this_board[row][column].flagged)
-          || @this_board[row][column].revealed )
+    board = @this_board.board_array
+    board.each_index do |row|
+      board.each_index do |column|
+        unless (board[row][column].content == "B" && board[row][column].flagged) || board[row][column].revealed
           could_win = false
         end
       end
     end
     could_win
-  end
-
-  def initialize(size)
-    @this_board = Board.new(size)
-    @user = User.new
-    p "If you want to reveal a coordinate type '0,0', if you want to flag a coordinate type '0,0f'"
   end
 
   def prompt
@@ -34,12 +39,16 @@ class Game
   end
 
   def play
-    input = prompt
-    if input[2] == 'f'
-      @this_board.board_array[x,y].flagged
-    else
-      @this_board.explore([x,y])
+    until won?
+      input = prompt
+      if input[2] == 'f'
+        @this_board.board_array[input[0]][input[1]].flag
+      else
+        @this_board.explore([input[0],input[1]])
+      end
+      @this_board.print_board
     end
+    p "You won."
   end
 end
 
@@ -48,7 +57,6 @@ class Tile
   attr_accessor :content, :revealed, :flagged
 
   def initialize
-    @clicked = false
     @flagged = false
     @content = nil
     @revealed = false
@@ -69,10 +77,15 @@ class Tile
 end
 
 class Board
-  #9X9 or 16X16emn
   attr_accessor :board_array
 
-  def to_s
+  def initialize(size)
+    @board_size = size
+    @board_array = []
+    create_board(size)
+  end
+
+  def print_board
     @board_size.times do |row|
       arr = []
       @board_size.times do |col|
@@ -80,7 +93,7 @@ class Board
       end
       p arr
     end
-
+    puts "/n"
     @board_size.times do |row|
       arr = []
       @board_size.times do |col|
@@ -94,14 +107,6 @@ class Board
       end
       p arr
     end
-  end
-
-
-
-  def initialize(size)
-    @board_size = size
-    @board_array = []
-    create_board(size)
   end
 
   def create_board(size)
@@ -130,6 +135,14 @@ class Board
       end
     end
   end
+
+  # def [](coordinate)
+  #   return @board[coordinate[0]][coordinate[1]]
+  # end
+  #
+  # self[coordinate]
+  #
+  # def []=(coord, value)
 
   def populate(coord)
     #if the tile at coord is already a b, skip
@@ -221,3 +234,6 @@ end
 def reload
   load './minesweeper.rb'
 end
+
+newgame = Game.new(9)
+newgame.play
